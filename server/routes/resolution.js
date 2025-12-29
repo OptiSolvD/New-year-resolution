@@ -37,6 +37,28 @@ router.get("/all", auth, async (req, res) => {
   res.json(user.resolutions);
 });
 
+//edit 
+
+router.put("/edit/:resId", auth, async (req, res) => {
+  try {
+     console.log("EDIT ROUTE HIT:", req.params.resId);
+    const user = await User.findById(req.user.id);
+
+    const resolution = user.resolutions.id(req.params.resId);
+
+    if (!resolution)
+      return res.status(404).json({ msg: "Resolution not found" });
+
+    resolution.text = req.body.text;
+
+    await user.save(); // auto updates updatedAt
+
+    res.json(user);
+
+  } catch (err) {
+    res.status(500).send("Server Error");
+  }
+});
 
 // DELETE
 router.delete("/delete/:resId", auth, async (req, res) => {

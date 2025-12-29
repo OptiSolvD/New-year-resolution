@@ -10,21 +10,21 @@ export default function Dashboard() {
 
   const [user, setUser] = useState(null);
   const [resolutions, setResolutions] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
 
-  // Redirect IMMEDIATELY if NOT logged in
+
+  // Redirect if not logged in
+  useEffect(() => { if (!token) navigate("/"); }, [token, navigate]);
+
+
+  // Fetch user + resolutions
   useEffect(() => {
-    if (!token) navigate("/");
-  }, [token, navigate]);
 
-
-  // Fetch data ONLY if token exists
-  useEffect(() => {
-
-    if (!token) return;   // <-- IMPORTANT
+    if (!token) return;
 
     const fetchData = async () => {
       try {
-
         const res = await axios.get(
           "http://localhost:5000/api/resolution/me",
           { headers:{ Authorization:`Bearer ${token}` } }
@@ -34,10 +34,6 @@ export default function Dashboard() {
         setResolutions(res.data.resolutions || []);
 
       } catch (err) {
-
-        console.log("AUTH ERROR", err);
-
-        // token invalid → logout
         navigate("/");
       }
     };
@@ -47,9 +43,8 @@ export default function Dashboard() {
   }, [token, navigate]);
 
 
-  // Delete resolution
+  // Delete
   const deleteRes = async (id) => {
-
     await axios.delete(
       `http://localhost:5000/api/resolution/delete/${id}`,
       { headers:{ Authorization:`Bearer ${token}` } }
@@ -59,153 +54,200 @@ export default function Dashboard() {
   };
 
 
-  // Show loading
+  // Edit Logic
+  const startEdit = (res) => {
+    setEditingId(res._id);
+    setEditText(res.text);
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const saveEdit = async () => {
+    console.log("EDITING ID =", editingId);
+    console.log("Sending text =", editText);
+
+
+
+    await axios.put(
+      `http://localhost:5000/api/resolution/edit/${editingId}`,
+      { text: editText },
+      { headers:{ Authorization:`Bearer ${token}` } }
+    );
+
+    setResolutions(prev =>
+      prev.map(r =>
+        r._id === editingId
+          ? { ...r, text: editText, updatedAt: new Date() }
+          : r
+      )
+    );
+
+    setEditingId(null);
+  };
+
+
   if (!user) return <p style={{textAlign:"center"}}>Loading...</p>;
 
 
-  // Button to go to form
-  const goToForm = () => navigate("/form");
   const formatDateTime = (d) =>
-  new Date(d).toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
+    new Date(d).toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
 
   return (
-  <div
-    style={{
+    <div style={{
       minHeight: "100vh",
       padding: "40px",
       background: "linear-gradient(135deg,#0f2027,#203a43,#2c5364)",
       color: "white"
-    }}
-  >
+    }}>
 
-    {/* Card */}
-    <div
-      style={{
+      <div style={{
         maxWidth: "750px",
         margin: "auto",
         background: "rgba(0,0,0,0.45)",
         borderRadius: "18px",
-        padding: "35px 40px",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-        backdropFilter: "blur(6px)"
-      }}
-    >
+        padding: "35px 40px"
+      }}>
 
-      <h1 style={{ fontSize:"28px" }}>
-        🎆 Happy New Year <span style={{color:"#9be7ff"}}>{user.name}</span> 🎆
-      </h1>
+        <h1>
+          🎆 Happy New Year <span style={{color:"#9be7ff"}}>{user.name}</span> 🎆
+        </h1>
 
-      <p style={{ opacity:0.8, marginTop:"5px" }}>
-        Stay consistent — keep growing 🌱
-      </p>
+        <h3 style={{ marginTop:"25px" }}>Your Resolutions 🎯</h3>
 
-      <h3 style={{ marginTop:"25px" }}>Your Resolutions 🎯</h3>
 
-      {resolutions.length === 0 && (
-        <p style={{ opacity:0.8, marginTop:"8px" }}>
-          You haven't added any resolutions yet.
-        </p>
-      )}
-
-      {/* LIST */}
-      <div style={{ marginTop:"15px" }}>
-        {resolutions.map(res => (
-          <div
-            key={res._id}
-            style={{
-              display:"flex",
-              justifyContent:"space-between",
-              alignItems:"center",
-              padding:"12px 14px",
-              margin:"12px 0",
-              background:"#111",
-              borderRadius:"10px",
-              border:"1px solid #333",
-              transition:"0.2s"
-            }}
-          >
-            <span>✨ {res.text}</span>
-             <br/>
-
-  <small style={{ color:"#aaa" }}>
-  📅 Created: {formatDateTime(res.createdAt)}
-</small>
-
-            <button
-              onClick={() => deleteRes(res._id)}
+        <div style={{ marginTop:"15px" }}>
+          {resolutions.map(res => (
+            <div
+              key={res._id}
               style={{
-                background:"#ff5252",
-                border:"none",
-                color:"white",
-                padding:"6px 12px",
-                borderRadius:"8px",
-                cursor:"pointer",
-                fontWeight:"bold",
-                transition:"0.2s"
+                display:"flex",
+                justifyContent:"space-between",
+                alignItems:"center",
+                gap:"10px",
+                padding:"12px",
+                margin:"10px 0",
+                background:"#111",
+                borderRadius:"10px"
               }}
-              onMouseOver={e => e.target.style.background="#ff1744"}
-              onMouseOut={e => e.target.style.background="#ff5252"}
             >
-              Delete
-            </button>
-          </div>
-        ))}
-      </div>
 
-      {/* BUTTONS */}
-      <div style={{ marginTop:"35px" }}>
+              {/* LEFT */}
+              <div>
+                {editingId === res._id ? (
+                  <input
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    style={{
+                      padding:"6px",
+                      borderRadius:"6px",
+                      border:"1px solid #666",
+                      background:"#222",
+                      color:"white"
+                    }}
+                  />
+                ) : (
+                  <span>✨ {res.text}</span>
+                )}
 
-        <button
-          onClick={goToForm}
-          style={{
-            padding:"12px 25px",
-            borderRadius:"10px",
-            border:"none",
-            cursor:"pointer",
-            background:"#4CAF50",
-            color:"white",
-            fontSize:"16px",
-            fontWeight:"bold",
-            marginRight:"10px",
-            transition:"0.2s"
-          }}
-          onMouseOver={e => e.target.style.background="#3fa745"}
-          onMouseOut={e => e.target.style.background="#4CAF50"}
-        >
+                <br/>
+
+                <small style={{color:"#aaa"}}>
+                  📅 Created: {formatDateTime(res.createdAt)}
+                </small>
+
+                {res.updatedAt && (
+                  <small style={{color:"#aaa", marginLeft:"10px"}}>
+                    ✏ Updated: {formatDateTime(res.updatedAt)}
+                  </small>
+                )}
+              </div>
+
+
+              {/* RIGHT BUTTONS */}
+              <div style={{display:"flex", gap:"10px"}}>
+
+                {editingId === res._id ? (
+  <>
+    <button onClick={saveEdit} style={btnGreen}>Save</button>
+    <button onClick={cancelEdit} style={btnGrey}>Cancel</button>
+  </>
+) : (
+  <>
+    <button onClick={() => startEdit(res)} style={btnBlue}>Edit</button>
+    <button onClick={() => deleteRes(res._id)} style={btnRed}>Delete</button>
+  </>
+)}
+
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+
+        <button onClick={() => navigate("/form")} style={btnGreenBig}>
           ➕ Add New Resolution
-        </button>
-
-        <button
-          onClick={() => navigate("/")}
-          style={{
-            padding:"12px 25px",
-            borderRadius:"10px",
-            border:"1px solid #777",
-            cursor:"pointer",
-            background:"#1c1c1c",
-            color:"white",
-            fontSize:"15px",
-            transition:"0.2s"
-          }}
-          onMouseOver={e => e.target.style.background="#2a2a2a"}
-          onMouseOut={e => e.target.style.background="#1c1c1c"}
-        >
-          ⬅ Back to Home
         </button>
 
       </div>
 
     </div>
-
-  </div>
-);
+  );
 }
+
+
+// BUTTON STYLES
+const btnBlue = {
+  background:"#2196F3",
+  border:"none",
+  padding:"6px 10px",
+  borderRadius:"8px",
+  color:"white",
+  cursor:"pointer"
+};
+
+const btnRed = {
+  background:"#ff4d4d",
+  border:"none",
+  padding:"6px 10px",
+  borderRadius:"8px",
+  color:"white",
+  cursor:"pointer"
+};
+
+const btnGreen = {
+  background:"#4CAF50",
+  border:"none",
+  padding:"6px 10px",
+  borderRadius:"8px",
+  color:"white",
+  cursor:"pointer"
+};
+
+const btnGrey = {
+  background:"#777",
+  border:"none",
+  padding:"6px 10px",
+  borderRadius:"8px",
+  color:"white",
+  cursor:"pointer"
+};
+
+const btnGreenBig = {
+  marginTop:"20px",
+  padding:"12px 22px",
+  borderRadius:"10px",
+  border:"none",
+  background:"#4CAF50",
+  color:"white",
+  cursor:"pointer",
+  fontSize:"16px"
+};

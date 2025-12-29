@@ -1,20 +1,17 @@
 const mongoose = require("mongoose");
 
+const resolutionSchema = new mongoose.Schema({
+  text: String
+}, {
+  timestamps: true   // <-- auto adds createdAt + updatedAt
+});
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
   info: String,
 
-  resolutions: [
-    {
-      text: String,
-      createdAt: {
-        type: Date,
-        default: Date.now
-      }
-    }
-  ]
+  resolutions: [resolutionSchema]
 });
 
 module.exports = mongoose.model("User", userSchema);
