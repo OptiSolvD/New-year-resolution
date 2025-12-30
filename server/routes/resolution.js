@@ -70,6 +70,38 @@ router.delete("/delete/:resId", auth, async (req, res) => {
   res.json({ success:true });
 });
 
+//for undo/do
+router.put("/toggle/:resId", auth, async (req,res)=>{
+
+  const user = await User.findById(req.user.id);
+
+  const resItem = user.resolutions.id(req.params.resId);
+
+  resItem.completed = !resItem.completed;
+  resItem.progress = resItem.completed ? 100 : 0;
+
+  await user.save();   // <-- auto-updates updatedAt
+
+  res.json(resItem);
+});
+
+//update progress
+router.put("/progress/:resId", auth, async (req,res)=>{
+
+  const { progress } = req.body;
+
+  const user = await User.findById(req.user.id);
+  const resItem = user.resolutions.id(req.params.resId);
+
+  resItem.progress = progress;
+  resItem.completed = progress == 100;
+
+  await user.save();   // <-- timestamps update automatically
+
+  res.json(resItem);
+});
+
+
 
 // 🟢 THIS MUST BE LAST
 module.exports = router;

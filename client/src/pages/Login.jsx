@@ -8,7 +8,8 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  //gooogle login
+  
   const handleLogin = async () => {
     const res = await axios.post("http://localhost:5000/api/auth/login", form);
 
@@ -87,6 +88,8 @@ export default function Login() {
         >
           Login
         </button>
+       
+
         <p
   onClick={() => navigate("/")}
   style={{

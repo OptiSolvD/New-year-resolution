@@ -7,6 +7,8 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = "secret123";
 
 
+
+
 // SIGNUP
 router.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;

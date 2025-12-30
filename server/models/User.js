@@ -1,10 +1,21 @@
 const mongoose = require("mongoose");
 
 const resolutionSchema = new mongoose.Schema({
-  text: String
-}, {
-  timestamps: true   // <-- auto adds createdAt + updatedAt
-});
+
+  text: String,
+
+  completed: {
+    type: Boolean,
+    default: false
+  },
+
+  progress: {
+    type: Number,
+    default: 0
+  }
+
+}, { timestamps:true });
+
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,

@@ -7,6 +7,27 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
   const token = useSelector(state => state.auth.token);
+  //quotes
+  const QUOTES = [
+  "Small steps every day lead to big results.",
+  "Discipline is doing what needs to be done, even when you don't feel like it.",
+  "Your future is created by what you do today, not tomorrow.",
+  "Success is the sum of small efforts repeated daily.",
+  "Stay consistent — results will follow.",
+  "Dream big. Start small. Act now.",
+  "Don’t limit your challenges — challenge your limits.",
+  "Every day is a chance to get better.",
+  "You only fail when you stop trying.",
+  "Progress, not perfection."
+];
+
+  const [quote, setQuote] = useState("");
+
+useEffect(() => {
+  const random = Math.floor(Math.random() * QUOTES.length);
+  setQuote(QUOTES[random]);
+}, []);
+
 
   const [user, setUser] = useState(null);
   const [resolutions, setResolutions] = useState([]);
@@ -98,6 +119,46 @@ export default function Dashboard() {
       hour: "2-digit",
       minute: "2-digit",
     });
+    const toggleComplete = async(id)=>{
+  const res = await axios.put(
+    `http://localhost:5000/api/resolution/toggle/${id}`,
+    {},
+    { headers:{ Authorization:`Bearer ${token}` } }
+  );
+
+  setResolutions(prev =>
+    prev.map(r => r._id === id ? res.data : r)
+  );
+};
+
+
+const updateProgress = async(id,value)=>{
+  const res = await axios.put(
+    `http://localhost:5000/api/resolution/progress/${id}`,
+    { progress:value },
+    { headers:{ Authorization:`Bearer ${token}` } }
+  );
+
+  setResolutions(prev =>
+    prev.map(r => r._id === id ? res.data : r)
+  );
+};
+
+//overall progress summary 
+const completed = resolutions.filter(r => r.completed).length;
+const total = resolutions.length;
+const percent = total ? Math.round((completed/total)*100) : 0;
+//color coded progress
+const getProgressColor = (p) => {
+  if (p < 30) return "#ef4444";      // red
+  if (p < 70) return "#facc15";      // yellow
+  return "#22c55e";                  // green
+};
+
+ 
+
+
+
 
 
   return (
@@ -115,6 +176,18 @@ export default function Dashboard() {
         borderRadius: "18px",
         padding: "35px 40px"
       }}>
+        <div  className="quote" style={{
+  marginTop:"10px",
+  marginBottom:"20px",
+  padding:"12px",
+  borderRadius:"12px",
+  background:"rgba(255,255,255,0.08)",
+  fontStyle:"italic",
+  color:"#bde0fe"
+}}>
+  💡 {quote}
+</div>
+
 
         <h1>
           🎆 Happy New Year <span style={{color:"#9be7ff"}}>{user.name}</span> 🎆
@@ -154,7 +227,14 @@ export default function Dashboard() {
                     }}
                   />
                 ) : (
-                  <span>✨ {res.text}</span>
+                  <span
+  style={{
+    textDecoration: res.completed ? "line-through" : "none",
+    opacity: res.completed ? 0.6 : 1
+  }}
+>
+  ✨ {res.text}
+</span>
                 )}
 
                 <br/>
@@ -168,7 +248,32 @@ export default function Dashboard() {
                     ✏ Updated: {formatDateTime(res.updatedAt)}
                   </small>
                 )}
+                <div style={{marginTop:"6px"}}>
+<input
+  type="range"
+  min="0"
+  max="100"
+  value={res.progress || 0}
+  onChange={e => updateProgress(res._id, e.target.value)}
+  style={{
+    accentColor: getProgressColor(res.progress || 0),
+    width:"160px",
+    borderRadius:"30px",
+    
+    cursor:"pointer"
+  }}
+/>
+
+  <span style={{marginLeft:"8px"}}>
+    {res.progress || 0}%
+  </span>
+</div>
+
+                
               </div>
+              
+
+
 
 
               {/* RIGHT BUTTONS */}
@@ -182,6 +287,10 @@ export default function Dashboard() {
 ) : (
   <>
     <button onClick={() => startEdit(res)} style={btnBlue}>Edit</button>
+    <button onClick={() => toggleComplete(res._id)} style={btnGreen}>
+  {res.completed ? "Undo" : "Done"}
+</button>
+
     <button onClick={() => deleteRes(res._id)} style={btnRed}>Delete</button>
   </>
 )}
@@ -190,7 +299,19 @@ export default function Dashboard() {
 
             </div>
           ))}
+          <p style={{
+  marginTop:"20px",
+  fontSize:"16px",
+  color:"#ffafcc",
+  fontWeight:"bold"
+}}>
+  🎯 Progress: {completed} / {total} — {percent}% completed
+</p>
+
+
         </div>
+
+        
 
 
         <button onClick={() => navigate("/form")} style={btnGreenBig}>
