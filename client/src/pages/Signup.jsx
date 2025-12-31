@@ -10,23 +10,45 @@ export default function Signup() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  // const disabled =
+  //   !form.name.trim() ||
+  //   !form.email.trim() ||
+  //   !form.password.trim() ||
+  //   form.password.length < 6;
 
   const handleSubmit = async () => {
+
+  if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+    alert("All fields are required");
+    return;
+  }
+
+  if (!form.email.includes("@")) {
+    alert("Enter a valid email");
+    return;
+  }
+
+  if (form.password.length < 6) {
+    alert("Password must be at least 6 characters");
+    return;
+  }
+
+  try {
 
     const res = await axios.post(
       "http://localhost:5000/api/auth/signup",
       form
     );
 
-    // save token
     localStorage.setItem("token", res.data.token);
-
-    // update redux
     dispatch(setToken(res.data.token));
 
-    // go to dashboard
     navigate("/dashboard");
-  };
+
+  } catch (err) {
+    alert("Signup failed — try again");
+  }
+};
 
   return (
     <div style={{
@@ -92,6 +114,7 @@ export default function Signup() {
         />
 
         <button
+        // disabled={disabled}
           onClick={handleSubmit}
           style={{
             width:"100%",

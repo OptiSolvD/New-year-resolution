@@ -2,3 +2,35 @@ node_modules
 client/node_modules
 server/node_modules
 .env
+server/serviceAccountKey.json
+
+# Node modules
+node_modules
+client/node_modules
+server/node_modules
+
+# Environment variables
+.env
+.env.*
+server/.env
+client/.env
+
+# Firebase Admin Key
+serviceAccountKey.json
+server/serviceAccountKey.json
+
+# Build files
+build
+dist
+client/build
+
+# Logs
+*.log
+logs
+
+# OS files
+.DS_Store
+
+# Editor files
+.vscode
+.idea

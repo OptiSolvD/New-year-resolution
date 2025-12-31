@@ -18,9 +18,13 @@ const resolutionSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   name: String,
-  email: String,
-  password: String,
-  info: String,
+  email: { type: String, unique: true },
+  password: { type: String, default: null },
+provider: { 
+  type: String, 
+  enum: ["local", "google"], 
+  default: "local" 
+},
 
   resolutions: [resolutionSchema]
 });

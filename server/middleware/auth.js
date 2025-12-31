@@ -1,14 +1,14 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "secret123";
 
 module.exports = function (req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
 
+  const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.sendStatus(401);
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.sendStatus(403);
-    req.user = user;
+
+    req.userId = decoded.id;   // ALWAYS SET THIS
     next();
   });
 };

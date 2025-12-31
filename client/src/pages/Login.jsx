@@ -3,12 +3,42 @@ import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setToken } from "../features/authSlice";
 import { useNavigate } from "react-router-dom";
+import { auth, provider } from "../firebase";
+import { signInWithPopup } from "firebase/auth";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const dispatch = useDispatch();
   const navigate = useNavigate();
   //gooogle login
+  const handleGoogleLogin = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+
+    const firebaseToken = await result.user.getIdToken();
+
+    const res = await axios.post(
+      "http://localhost:5000/api/auth/google",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${firebaseToken}`
+        }
+      }
+    );
+
+    localStorage.setItem("token", res.data.token);
+
+    dispatch(setToken(res.data.token));
+
+    navigate("/");
+
+  } catch (err) {
+    console.error(err);
+    alert("Google login failed");
+  }
+};
+
   
   const handleLogin = async () => {
     const res = await axios.post("http://localhost:5000/api/auth/login", form);
@@ -88,6 +118,10 @@ export default function Login() {
         >
           Login
         </button>
+        <button onClick={handleGoogleLogin}>
+ Continue with Google
+</button>
+
        
 
         <p

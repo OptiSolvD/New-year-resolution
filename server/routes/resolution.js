@@ -2,25 +2,24 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+
+
+// GET CURRENT USER
 router.get("/me", auth, async (req, res) => {
 
-  const userId = req.user.id || req.user._id;
-
-  const user = await User.findById(userId);
+  const user = await User.findById(req.userId);
 
   res.json(user);
 });
 
 
-// SAVE DATA
+// SAVE RESOLUTION
 router.post("/save", auth, async (req, res) => {
-
-  console.log("TOKEN PAYLOAD:", req.user);
 
   const { resolution } = req.body;
 
   const result = await User.findByIdAndUpdate(
-    req.user.id,
+    req.userId,
     { 
       $push: { resolutions: { text: resolution } } 
     },
@@ -31,18 +30,19 @@ router.post("/save", auth, async (req, res) => {
 });
 
 
-// GET ALL
+// GET ALL RESOLUTIONS
 router.get("/all", auth, async (req, res) => {
-  const user = await User.findById(req.user.id);
+
+  const user = await User.findById(req.userId);
+
   res.json(user.resolutions);
 });
 
-//edit 
 
+// EDIT RESOLUTION
 router.put("/edit/:resId", auth, async (req, res) => {
   try {
-     console.log("EDIT ROUTE HIT:", req.params.resId);
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId);
 
     const resolution = user.resolutions.id(req.params.resId);
 
@@ -51,57 +51,61 @@ router.put("/edit/:resId", auth, async (req, res) => {
 
     resolution.text = req.body.text;
 
-    await user.save(); // auto updates updatedAt
+    await user.save();
 
     res.json(user);
 
   } catch (err) {
+    console.error(err);
     res.status(500).send("Server Error");
   }
 });
 
-// DELETE
+
+// DELETE RESOLUTION
 router.delete("/delete/:resId", auth, async (req, res) => {
+
   await User.findByIdAndUpdate(
-    req.user.id,
+    req.userId,
     { $pull: { resolutions:{ _id: req.params.resId } } }
   );
 
   res.json({ success:true });
 });
 
-//for undo/do
+
+// TOGGLE COMPLETE
 router.put("/toggle/:resId", auth, async (req,res)=>{
 
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.userId);
 
   const resItem = user.resolutions.id(req.params.resId);
 
   resItem.completed = !resItem.completed;
   resItem.progress = resItem.completed ? 100 : 0;
 
-  await user.save();   // <-- auto-updates updatedAt
+  await user.save();
 
   res.json(resItem);
 });
 
-//update progress
+
+// UPDATE PROGRESS
 router.put("/progress/:resId", auth, async (req,res)=>{
 
   const { progress } = req.body;
 
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.userId);
+
   const resItem = user.resolutions.id(req.params.resId);
 
   resItem.progress = progress;
   resItem.completed = progress == 100;
 
-  await user.save();   // <-- timestamps update automatically
+  await user.save();
 
   res.json(resItem);
 });
 
 
-
-// 🟢 THIS MUST BE LAST
 module.exports = router;
